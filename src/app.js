@@ -27,7 +27,16 @@ app.use(
 // set security HTTP headers
 app.use(helmet());
 
-app.use(cookie());
+// Add the following lines for cookie session and Passport initialization
+const cookieSession = require("cookie-session");
+const passport = require("passport");
+app.use(cookieSession({
+  name: 'google-auth-session',
+  keys: ['key1', 'key2']
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // parse json request body
 app.use(express.json());

@@ -1,4 +1,4 @@
-const PersonalInformation = require('../models/PersonalInformation');
+const PersonalInformation = require('../models/profile.model');
 
 // Create a new profile
 exports.createProfile = async (profileData) => {
