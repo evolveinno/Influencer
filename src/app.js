@@ -19,7 +19,11 @@ if (config.env !== "test") {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
-
+app.use(
+  cors({
+    origin: "http://localhost:8080",
+  })
+);
 // set security HTTP headers
 app.use(helmet());
 
