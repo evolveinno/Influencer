@@ -3,70 +3,63 @@ const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const { toJSON, paginate } = require("./plugins");
 const { roles } = require("../config/roles");
+const Joi = require("joi");
+const jwt = require("jsonwebtoken");
 
 const userSchema = mongoose.Schema({
-   
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        lowercase: true,
-    },
-    mobile: {
-      type: String,
-      required: true,
-    },
-    password: {
-        type: String,
-        required: true,
-        trim: true,
-        minlength: 8,
-        private: true,
-    },
-    googleId: {
-        type: String,
-    },
-}, {
-    timestamps: true,
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true,
+  },
+  mobile: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength: 8,
+    private: true,
+  },
 });
 
-// add plugin that converts mongoose to json
 userSchema.plugin(toJSON);
 userSchema.plugin(paginate);
 
-/**
- * Check if email is taken
- * @param {string} email - The user's email
- * @param {ObjectId} [excludeUserId] - The id of the user to be excluded
- * @returns {Promise<boolean>}
- */
-userSchema.statics.isEmailTaken = async function(email, excludeUserId) {
-    const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
-    return !!user;
+userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
+  const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
+  return !!user;
 };
 
-/**
- * Check if password matches the user's password
- * @param {string} password
- * @returns {Promise<boolean>}
- */
-userSchema.methods.isPasswordMatch = async function(password) {
-    const user = this;
-    return bcrypt.compare(password, user.password);
+userSchema.methods.isPasswordMatch = async function (password) {
+  const user = this;
+  return bcrypt.compare(password, user.password);
 };
 
-userSchema.pre("save", async function(next) {
-    const user = this;
-    if (user.isModified("password")) {
-        user.password = await bcrypt.hash(user.password, 8);
-    }
-    next();
+userSchema.pre("save", async function (next) {
+  const user = this;
+  if (user.isModified("password")) {
+    user.password = await bcrypt.hash(user.password, 8);
+  }
+  next();
 });
+const validateUser = (user) => {
+  const Schema = {
+    email: Joi.string().required().min(5).max(50),
+    mobile: Joi.string().min(5).max(20).required(),
+    password: Joi.string().min(8).max(20).required(),
+  };
+  return Joi.validate(Schema, user);
+};
+userSchema.methods.generateToken = function () {
+  const token = jwt.sign({ email: this.email, _id: _id });
+  return token;
+};
 
-/**
- * @typedef User
- */
 const User = mongoose.model("User", userSchema);
 
-module.exports = User;
+module.exports = { User, validateUser };
